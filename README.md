@@ -71,6 +71,63 @@ pip install -r requirements.txt
 python welcome.py
 ```
 
+## [オリジナルに追記] Dockerで起動（without GPU）
+
+* オリジナルのサンプルコードが動かないため、実行可能なDocker環境を用意した
+  - ローカルマシンはMacにて確認。XサーバはXQuartz
+  - openGLとlocalのXサーバ(XQuartz)に直接繋ごうとしていたが、上手く行かなかったためssh経由でXを飛ばすこととした
+
+XQuartzの設定のため下記のコマンドを実行
+
+```bash
+## 「環境設定→ セキュリティ→ 接続を認証」 をチェック
+$ defaults write org.macosforge.xquartz.X11 no_auth -bool false
+## 「環境設定→ セキュリティ→ ネットワーク・クライアントからの接続を許可する」 をチェック
+$ defaults write org.macosforge.xquartz.X11 nolisten_tcp -bool false
+## OpenGL が使えるようにする
+$ defaults write org.macosforge.xquartz.X11 enable_iglx -bool true
+```
+
+ビルド方法
+
+```bash
+./docker_build.sh
+```
+
+コンテナの起動（sshdが立ち上がる。バックグラウンド実行）
+
+```bash
+./docker_run.sh &
+```
+
+ローカルにSSHの公開鍵と秘密鍵を作成（`username`はローカルマシンのユーザー名に読み替えること）
+
+```bash
+$ ssh-keygen -t rsa -b 4096
+Generating public/private rsa key pair.
+Enter file in which to save the key (/Users/username/.ssh/id_rsa): /Users/username/.ssh/id_rsa_for_docker_ssh
+```
+
+コンテナにsshで接続（パスワードは`password`）
+
+```bash
+$ ./docker_connect.sh
+user01@localhost's password: 
+```
+
+user01というユーザーで接続されるので、$HOME配下のworkディレクトリに行き、サンプルスクリプトを実行
+
+```bash
+$ cd work
+$ python welcome.py
+```
+
+* 参考にした記事等
+  - [dockerコンテナの中で立ち上げたGUIアプリをmacに表示してみる](https://qiita.com/machisuke/items/84626eba60ab76d8fc4e)
+  - [macOS で Docker 内で動かした X11 アプリを表示させる](https://qiita.com/kawaz/items/6cf04f923ebfac45a997)
+  - [Docker for Mac で X11 アプリケーションを動かす](https://qiita.com/hoto17296/items/bdb2ab24bc32b6b7f360)
+  - [NVIDIAが入っているPCにおいてdocker上でopenGLなプログラムを起動して手元で見る．nvidia-dockerのversion1と2の両方に対応．](https://qiita.com/eisoku9618/items/c2cca0f0bf764def2efd)
+    - NVIDIAのGPUがないので入っていないので結論としては必要がなかった
 ## Setup with GPU
 
 Day4で深層学習を利用した強化学習を実装していますが(DQN/A2C)、この学習にはGPUが不可欠です。GPUがない場合、学習に数日はかかります。
